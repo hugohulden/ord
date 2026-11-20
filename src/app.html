@@ -1,0 +1,1573 @@
+<title>Ordträning</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-title" content="Ordträning">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one calm column, thumb-sized controls, bottom tab bar; diff letters set in mono so they line up.
+   Dark-only by request ("mörkt läge"). */
+:root {
+  color-scheme: dark;
+  --bg: #11131a;
+  --surface: #1a1e29;
+  --surface-2: #232838;
+  --line: #2e3446;
+  --fg: #eceff7;
+  --muted: #9aa3b8;
+  --accent: #7c9fff;
+  --accent-ink: #0d1430;
+  --again: #f26b62;
+  --hard: #f2a44b;
+  --good: #4cc38a;
+  --easy: #5aaaf2;
+  --idea: #f2d16b;
+  --pron: #b18cff;
+  --spell: #45c7c0;
+  --font-body: "Atkinson Hyperlegible", system-ui, -apple-system, sans-serif;
+  --font-display: "Bricolage Grotesque", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --r: 16px;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--fg); }
+body {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+#app {
+  max-width: 560px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px calc(96px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+body.in-session #app { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: 30px; font-weight: 800; }
+h2 { font-size: 23px; font-weight: 800; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row > * { min-width: 0; }
+.grow { flex: 1 1 0; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.spacer { flex: 1; }
+.eyebrow { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button:disabled { opacity: 0.4; cursor: default; }
+.btn {
+  min-height: 56px; padding: 0 18px; border-radius: var(--r);
+  font-weight: 700; font-size: 18px;
+  background: var(--surface-2); color: var(--fg);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%;
+}
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: transparent; color: var(--muted); min-height: 44px; font-weight: 400; font-size: 16px; }
+.btn.small { min-height: 46px; font-size: 16px; }
+.btn:active:not(:disabled) { transform: scale(0.98); }
+.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.card { background: var(--surface); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+
+/* Home */
+.hero-start { min-height: 112px; flex-direction: column; gap: 4px; border-radius: 22px; }
+.hero-start .big { font-family: var(--font-display); font-size: 26px; font-weight: 800; }
+.hero-start .sub { font-weight: 400; font-size: 16px; opacity: 0.85; }
+.streak { display: flex; align-items: baseline; gap: 10px; }
+.streak .n { font-family: var(--font-display); font-size: 56px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+
+/* Word in a card */
+.word-big { font-family: var(--font-display); font-weight: 800; font-size: clamp(34px, 11vw, 52px); text-align: center; overflow-wrap: anywhere; line-height: 1.1; padding: 10px 0; }
+.sv { text-align: center; color: var(--muted); font-size: 19px; margin-top: -6px; }
+.sv strong { color: var(--fg); }
+.sv.small { font-size: 14px; }
+.info { display: grid; grid-template-columns: 26px 1fr; gap: 2px 10px; align-items: start; }
+.info .ic { font-size: 18px; line-height: 1.5; text-align: center; }
+.info .lbl { font-size: 13px; color: var(--muted); grid-column: 2; }
+.info .txt { grid-column: 2; }
+
+/* Rating */
+.rating { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.rate { min-height: 66px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-weight: 700; border: 1.5px solid currentColor; background: transparent; }
+.rate small { font-weight: 400; font-size: 12px; opacity: 0.85; font-variant-numeric: tabular-nums; }
+.rate[data-r="1"] { color: var(--again); }
+.rate[data-r="2"] { color: var(--hard); }
+.rate[data-r="3"] { color: var(--good); }
+.rate[data-r="4"] { color: var(--easy); }
+.rate.suggested { color: var(--accent-ink); border-color: transparent; }
+.rate.suggested[data-r="1"] { background: var(--again); }
+.rate.suggested[data-r="2"] { background: var(--hard); }
+.rate.suggested[data-r="3"] { background: var(--good); }
+.rate.suggested[data-r="4"] { background: var(--easy); }
+
+/* Inputs */
+.answer {
+  width: 100%; min-height: 64px; border-radius: var(--r); border: 1.5px solid var(--line);
+  background: var(--surface); color: var(--fg); text-align: center;
+  font-family: var(--font-mono); font-size: 26px; font-weight: 700; padding: 0 12px;
+}
+.answer:focus { border-color: var(--accent); outline: none; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 14px; color: var(--muted); }
+.field input, .field textarea, .field select {
+  width: 100%; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); color: var(--fg);
+  font: inherit; padding: 12px; min-height: 48px;
+}
+.field textarea { min-height: 88px; resize: vertical; }
+.field input[type="file"] { padding: 10px; min-height: 0; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--surface-2); border-radius: 12px; padding: 4px; gap: 4px; }
+.seg button { min-height: 40px; border-radius: 9px; font-weight: 700; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); }
+
+/* Diff */
+.diff { display: flex; flex-direction: column; gap: 10px; }
+.diff .line { font-family: var(--font-mono); font-size: clamp(22px, 7vw, 32px); font-weight: 700; overflow-x: auto; white-space: nowrap; letter-spacing: 0.02em; }
+.d-ok { color: var(--good); }
+.d-bad { color: var(--again); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.d-extra { color: var(--again); text-decoration: line-through; text-decoration-thickness: 2px; }
+.d-miss { color: var(--hard); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.d-plain { color: var(--fg); }
+.legend { display: flex; gap: 14px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Mic */
+.mic { width: 108px; height: 108px; border-radius: 50%; background: var(--surface-2); color: var(--accent); font-size: 40px; display: grid; place-items: center; margin: 0 auto; }
+.mic.rec { background: var(--again); color: #fff; }
+
+/* Session top bar */
+.topbar { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.topbar .count { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.progress { height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+.progress > i { display: block; height: 100%; background: var(--accent); }
+.banner { background: color-mix(in srgb, var(--hard) 22%, var(--surface)); color: var(--fg); border-radius: 12px; padding: 10px 12px; font-size: 15px; }
+.note { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; font-size: 15px; color: var(--muted); }
+
+/* Lists */
+.list { display: flex; flex-direction: column; background: var(--surface); border-radius: var(--r); overflow: hidden; }
+.item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-top: 1px solid var(--line); text-align: left; width: 100%; }
+.item:first-child { border-top: 0; }
+.item .t { font-weight: 700; }
+.item .s { font-size: 14px; color: var(--muted); }
+.item .meta { margin-left: auto; flex-shrink: 0; }
+.status-new { color: var(--easy); }
+.status-learning { color: var(--hard); }
+.status-known { color: var(--good); }
+
+.stats3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tile { background: var(--surface); border-radius: 14px; padding: 14px 8px; text-align: center; }
+.tile .v { font-family: var(--font-display); font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tile .k { font-size: 13px; color: var(--muted); }
+
+.chart svg { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--font-body); }
+
+/* Tabs */
+#tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line);
+  padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+  display: grid; grid-template-columns: repeat(4, 1fr);
+}
+#tabs button { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 52px; justify-content: center; color: var(--muted); font-size: 12px; font-weight: 700; }
+#tabs button svg { width: 24px; height: 24px; }
+#tabs button[aria-current="page"] { color: var(--accent); }
+body.in-session #tabs { display: none; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(90px + env(safe-area-inset-bottom, 0px)); background: var(--surface-2); color: var(--fg); padding: 10px 16px; border-radius: 999px; font-size: 15px; z-index: 20; box-shadow: 0 6px 24px rgb(0 0 0 / 0.35); }
+@media (prefers-reduced-motion: no-preference) {
+  .flash-ok { animation: ok 0.5s ease-out; }
+  .flash-bad { animation: bad 0.4s ease-out; }
+  @keyframes ok { from { box-shadow: 0 0 0 3px var(--good); } to { box-shadow: 0 0 0 0 transparent; } }
+  @keyframes bad { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+}
+</style>
+
+<div id="app"><p class="muted">Laddar…</p></div>
+<nav id="tabs" aria-label="Flikar">
+  <button data-act="tab" data-arg="home" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Idag</button>
+  <button data-act="tab" data-arg="words"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v16H6.5A2.5 2.5 0 0 0 4 21.5"/><path d="M9 8h6"/></svg>Ord</button>
+  <button data-act="tab" data-arg="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>Statistik</button>
+  <button data-act="tab" data-arg="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Inställningar</button>
+</nav>
+
+<script id="core">
+/* ===== Ren logik: FSRS-6, stavningsdiff, felmönster, planering ===== */
+const DAY = 86400000;
+const W = [0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001, 1.8722, 0.1666, 0.796,
+  1.4835, 0.0614, 0.2629, 1.6483, 0.6014, 1.8729, 0.5425, 0.0912, 0.0658, 0.1542];
+const RETENTION = 0.9, LEARN = [60e3, 600e3], RELEARN = [600e3], MAX_IVL = 36500;
+const DECAY = -W[20], FACTOR = Math.pow(0.9, 1 / DECAY) - 1;
+const S_MIN = 0.001;
+// state: 0 ny, 1 lär sig, 2 repetition, 3 ominlärning
+
+function newCard(now) { return { state: 0, step: 0, s: null, d: null, due: now, last: null, reps: 0, lapses: 0, agains: 0, introduced: null }; }
+function wholeDays(a, b) { return Math.floor((b - a) / DAY); }
+function retrievability(c, now) {
+  if (c.last == null || c.s == null) return 0;
+  return Math.pow(1 + FACTOR * Math.max(0, wholeDays(c.last, now)) / c.s, DECAY);
+}
+function ivlDays(s) { return Math.min(Math.max(Math.round((s / FACTOR) * (Math.pow(RETENTION, 1 / DECAY) - 1)), 1), MAX_IVL); }
+const clampD = d => Math.min(Math.max(d, 1), 10);
+const initS = r => Math.max(W[r - 1], S_MIN);
+const initD = r => W[4] - Math.exp(W[5] * (r - 1)) + 1;
+function shortS(s, r) {
+  let inc = Math.exp(W[17] * (r - 3 + W[18])) * Math.pow(s, -W[19]);
+  if (r > 1) inc = Math.max(inc, 1);
+  return Math.max(s * inc, S_MIN);
+}
+function nextD(d, r) {
+  const delta = -(W[6] * (r - 3));
+  const damped = d + (10 - d) * delta / 9;
+  return clampD(W[7] * initD(4) + (1 - W[7]) * damped);
+}
+function nextS(d, s, R, r) {
+  let v;
+  if (r === 1) {
+    const lt = W[11] * Math.pow(d, -W[12]) * (Math.pow(s + 1, W[13]) - 1) * Math.exp((1 - R) * W[14]);
+    v = Math.min(lt, s / Math.exp(W[17] * W[18]));
+  } else {
+    const hp = r === 2 ? W[15] : 1, eb = r === 4 ? W[16] : 1;
+    v = s * (1 + Math.exp(W[8]) * (11 - d) * Math.pow(s, -W[9]) * (Math.exp((1 - R) * W[10]) - 1) * hp * eb);
+  }
+  return Math.max(v, S_MIN);
+}
+function updateMemory(c, r, days, now) {
+  if (c.s == null || c.d == null) { c.s = initS(r); c.d = clampD(initD(r)); }
+  else if (days != null && days < 1) { c.s = shortS(c.s, r); c.d = nextD(c.d, r); }
+  else { c.s = nextS(c.d, c.s, retrievability(c, now), r); c.d = nextD(c.d, r); }
+}
+function stepInterval(c, r, steps) {
+  const graduate = () => { c.state = 2; c.step = 0; return ivlDays(c.s) * DAY; };
+  if (!steps.length || (c.step >= steps.length && r !== 1)) return graduate();
+  if (r === 1) { c.step = 0; return steps[0]; }
+  if (r === 2) {
+    if (c.step === 0 && steps.length === 1) return steps[0] * 1.5;
+    if (c.step === 0) return (steps[0] + steps[1]) / 2;
+    return steps[Math.min(c.step, steps.length - 1)];
+  }
+  if (r === 3) { if (c.step + 1 >= steps.length) return graduate(); c.step += 1; return steps[c.step]; }
+  return graduate();
+}
+/** FSRS-6 (som py-fsrs 6.x utan fuzz). r: 1 Igen, 2 Svårt, 3 Bra, 4 Lätt. */
+function review(c0, r, now) {
+  const c = { ...c0 };
+  const days = c.last != null ? wholeDays(c.last, now) : null;
+  let ivl;
+  if (c.state === 2 && r === 1) c.lapses += 1;
+  if (c.state === 0 || c.state === 1) {
+    if (c.state === 0) { c.state = 1; c.step = 0; }
+    updateMemory(c, r, days, now);
+    ivl = stepInterval(c, r, LEARN);
+  } else if (c.state === 2) {
+    c.s = (days != null && days < 1) ? shortS(c.s, r) : nextS(c.d, c.s, retrievability(c, now), r);
+    c.d = nextD(c.d, r);
+    if (r === 1 && RELEARN.length) { c.state = 3; c.step = 0; ivl = RELEARN[0]; }
+    else ivl = ivlDays(c.s) * DAY;
+  } else {
+    updateMemory(c, r, days, now);
+    ivl = stepInterval(c, r, RELEARN);
+  }
+  c.due = now + ivl; c.last = now; c.reps += 1;
+  return c;
+}
+function preview(c, now) { const o = {}; for (const r of [1, 2, 3, 4]) o[r] = review(c, r, now).due - now; return o; }
+function ivlText(ms) {
+  const s = ms / 1000;
+  if (s < 3600) return Math.max(1, Math.round(s / 60)) + " min";
+  if (s < 86400) return Math.round(s / 3600) + " h";
+  const d = s / 86400;
+  if (d < 31) return Math.round(d) + " d";
+  if (d < 365) return Math.round(d / 30) + " mån";
+  return (d / 365).toFixed(1).replace(".", ",") + " år";
+}
+
+/* --- Stavning --- */
+const norm = s => String(s).trim().toLowerCase();
+const isCorrect = (e, t) => norm(e) === norm(t);
+/** Bokstavsdiff. op: m (rätt), s (fel bokstav), miss (saknas), x (extra). */
+function diff(expected, typed) {
+  const e = [...String(expected).trim()], t = [...String(typed).trim()];
+  const el = e.map(c => c.toLowerCase()), tl = t.map(c => c.toLowerCase());
+  const n = e.length, m = t.length;
+  const dp = Array.from({ length: n + 1 }, (_, i) => Array.from({ length: m + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)));
+  for (let i = 1; i <= n; i++) for (let j = 1; j <= m; j++) {
+    dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (el[i - 1] === tl[j - 1] ? 0 : 1));
+  }
+  const ops = [];
+  let i = n, j = m;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && el[i - 1] === tl[j - 1] && dp[i][j] === dp[i - 1][j - 1]) { ops.push({ op: "m", e: e[i - 1] }); i--; j--; }
+    else if (i > 0 && dp[i][j] === dp[i - 1][j] + 1) { ops.push({ op: "miss", e: e[i - 1] }); i--; }
+    else if (j > 0 && dp[i][j] === dp[i][j - 1] + 1) { ops.push({ op: "x", t: t[j - 1] }); j--; }
+    else { ops.push({ op: "s", e: e[i - 1], t: t[j - 1] }); i--; j--; }
+  }
+  return ops.reverse();
+}
+/** Redigeringsavstånd där "ie"/"ei"-omkastning räknas som ett fel. */
+function distance(expected, typed) {
+  const a = [...norm(expected)], b = [...norm(typed)];
+  const n = a.length, m = b.length;
+  if (!n) return m; if (!m) return n;
+  const d = Array.from({ length: n + 1 }, (_, i) => Array.from({ length: m + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)));
+  for (let i = 1; i <= n; i++) for (let j = 1; j <= m; j++) {
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+  }
+  return d[n][m];
+}
+/** Helt rätt = Bra (Lätt om snabbt), ett litet fel = Svårt, mer = Igen. */
+function suggestRating(expected, typed, seconds) {
+  const dist = distance(expected, typed);
+  if (dist === 0) return seconds <= 3 + 0.35 * [...expected].length ? 4 : 3;
+  if (dist === 1 && [...norm(expected)].length >= 4) return 2;
+  return 1;
+}
+function checkWordInSentence(word, sentence) {
+  const target = norm(word), parts = target.split(/\s+/).length;
+  const tokens = String(sentence).split(/[^\p{L}'’-]+/u).filter(Boolean);
+  const cands = [];
+  for (let i = 0; i + parts <= tokens.length; i++) cands.push(tokens.slice(i, i + parts).join(" "));
+  if (cands.some(c => norm(c) === target)) return { correct: true, closest: null };
+  let best = null, bd = Infinity;
+  for (const c of cands) { const dd = distance(target, c); if (dd < bd) { bd = dd; best = c; } }
+  return { correct: false, closest: best != null && bd <= Math.max(2, Math.floor([...target].length / 2)) ? best : null };
+}
+
+/* --- Felmönster --- */
+const SILENT = ["stle", "dn", "kn", "wr", "mb", "gn", "ps", "rh", "bt", "mn", "pt", "wh", "gh"];
+const GROUPS = ["ough", "augh", "eigh", "ssion", "cious", "tious", "tion", "sion", "ture", "ious", "eous",
+  "ible", "able", "ance", "ence", "ary", "ery", "ory", "que", "gue", "dge", "tch", "igh",
+  "ght", "aoi", "sch", "eou", "ei", "ie", "ea", "ph", "ch", "sh", "th", "ck", "sc", "ci",
+  "ce", "ai", "ay", "ou", "ow", "ee", "oo", "ue", "ui", "oi", "oy", "au", "aw", "ew", "eo",
+  "ae", "oe", "oa", "bh", "mh", "ao", "ly", "ful", "ent", "ant"];
+const ALL_GROUPS = SILENT.map(g => [g, true]).concat(GROUPS.map(g => [g, false])).sort((a, b) => b[0].length - a[0].length);
+const VOWELS = new Set(["a", "e", "i", "o", "u", "y"]);
+const isCons = c => typeof c === "string" && c.length === 1 && /\p{L}/u.test(c) && !VOWELS.has(c);
+function structuralKey(i, ch) {
+  if (i < 0 || i >= ch.length) return null;
+  const c = ch[i];
+  if (isCons(c) && ((i > 0 && ch[i - 1] === c) || (i + 1 < ch.length && ch[i + 1] === c))) return "dubbel:" + c;
+  for (const [g, silent] of ALL_GROUPS) {
+    const L = g.length, lo = Math.max(0, i - L + 1), hi = Math.min(i, ch.length - L);
+    for (let s = lo; s <= hi; s++) if (ch.slice(s, s + L).join("") === g) return (silent ? "tyst:" : "grupp:") + g;
+  }
+  return null;
+}
+function detectPatterns(expected, typed) {
+  const ops = diff(expected, typed);
+  const ch = [...String(expected).trim()].map(c => c.toLowerCase());
+  const keys = new Set();
+  let ei = 0;
+  for (const o of ops) {
+    if (o.op === "m") { ei++; continue; }
+    if (o.op === "s") {
+      const a = o.e.toLowerCase(), b = o.t.toLowerCase();
+      const k = structuralKey(ei, ch);
+      keys.add(k || (VOWELS.has(a) && VOWELS.has(b) ? "vokal:" + [a, b].sort().join("/") : "bokstav:" + a));
+      ei++;
+    } else if (o.op === "miss") {
+      keys.add(structuralKey(ei, ch) || "bokstav:" + ch[ei]); ei++;
+    } else {
+      const x = o.t.toLowerCase();
+      const prev = ei > 0 ? ch[ei - 1] : null, next = ei < ch.length ? ch[ei] : null;
+      if (isCons(x) && (x === prev || x === next)) keys.add("dubbel:" + x);
+      else keys.add(structuralKey(ei, ch) || structuralKey(ei - 1, ch) || "bokstav:" + x);
+    }
+  }
+  return keys;
+}
+function patternKeysIn(word) {
+  const ch = [...norm(word)], keys = new Set();
+  for (let i = 1; i < ch.length; i++) if (ch[i] === ch[i - 1] && isCons(ch[i])) keys.add("dubbel:" + ch[i]);
+  const s = ch.join("");
+  for (const [g, silent] of ALL_GROUPS) if (s.includes(g)) keys.add((silent ? "tyst:" : "grupp:") + g);
+  return keys;
+}
+function patternName(key) {
+  const [t, v] = key.split(":");
+  return ({ dubbel: `Dubbelteckning (${v}${v})`, grupp: `Bokstavsgruppen ”${v}”`, tyst: `Tyst bokstav (${v})`,
+    vokal: `Förväxlade vokaler (${v})`, bokstav: `Bokstaven ”${v}”` })[t] || key;
+}
+
+/* --- Planering --- */
+function endOfDay(now) { const d = new Date(now); d.setHours(24, 0, 0, 0); return d.getTime(); }
+function dayKey(t) { const d = new Date(t); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function isDue(c, now) {
+  if (c.state === 0) return false;
+  if (c.state === 2) return c.due < endOfDay(now);
+  return c.due <= now + 20 * 60e3;
+}
+/** entries: [{wid, skill, card, created, level}]. Nya ord tas lättast först. */
+function spreadSameWord(list, prev = null) {
+  const rest = list.slice(), out = [];
+  while (rest.length) {
+    const last = out.length ? out[out.length - 1].wid : prev;
+    let i = rest.findIndex(x => x.wid !== last); if (i < 0) i = 0;
+    out.push(rest.splice(i, 1)[0]);
+  }
+  return out;
+}
+function newForToday(entries, limit) {
+  if (limit <= 0) return [];
+  const byWord = new Map();
+  for (const e of entries) if (e.card.state === 0) { if (!byWord.has(e.wid)) byWord.set(e.wid, []); byWord.get(e.wid).push(e); }
+  const lvl = w => byWord.get(w)[0].level || 3;
+  const words = [...byWord.keys()].sort((a, b) => lvl(a) - lvl(b) || byWord.get(a)[0].created - byWord.get(b)[0].created || (a < b ? -1 : 1)).slice(0, limit);
+  const pick = sk => words.map(w => byWord.get(w).find(e => e.skill === sk)).filter(Boolean);
+  return pick("pron").concat(pick("spell"));
+}
+function dailyPlan(entries, now, newLimit, introducedToday) {
+  const due = entries.filter(e => isDue(e.card, now)).sort((a, b) => a.card.due - b.card.due);
+  const reviews = spreadSameWord(due);
+  return reviews.concat(spreadSameWord(newForToday(entries, Math.max(0, newLimit - introducedToday)), reviews.length ? reviews[reviews.length - 1].wid : null));
+}
+function morePlan(entries, now, horizonDays = 3, limit = 30) {
+  const h = endOfDay(now) + horizonDays * DAY;
+  return spreadSameWord(entries.filter(e => e.card.state !== 0 && e.card.due < h).sort((a, b) => a.card.due - b.card.due).slice(0, limit));
+}
+function hardPlan(entries, minFail = 2, limit = 20) {
+  const f = e => Math.max(e.card.lapses, e.card.agains || 0);
+  return spreadSameWord(entries.filter(e => e.card.state !== 0 && f(e) >= minFail).sort((a, b) => f(b) - f(a)).slice(0, limit));
+}
+function estimateSeconds(plan) { return plan.reduce((s, e) => s + (e.card.state === 0 ? 40 : 20), 0); }
+/** Lägg tillbaka ett kort ~4 kort längre fram, inte bredvid samma ord. */
+function requeue(queue, item, gap = 4) {
+  let i = Math.min(gap, queue.length);
+  while (i < queue.length && (queue[i].wid === item.wid || (i > 0 && queue[i - 1].wid === item.wid))) i++;
+  queue.splice(i, 0, item);
+}
+function streak(dayKeys, now) {
+  const set = new Set(dayKeys);
+  const d = new Date(now); d.setHours(12, 0, 0, 0);
+  if (!set.has(dayKey(d))) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (set.has(dayKey(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+</script>
+
+<script>
+/* ===== Ordbank, nivå 1 (lättast) till 5 (svårast) =====
+   [text, typ, nivå, uttal, delar, fälla, exempelmening, översättning] */
+const BANK = [
+  ["friend", "word", 1, "FRÄND", "fri·end", "i före e: fr-IE-nd, fast i:et inte hörs.", "She is my best friend.", "vän"],
+  ["people", "word", 1, "PIIP-öl", "peo·ple", "Ett tyst o: pe-O-ple.", "Many people came to the party.", "människor"],
+  ["because", "word", 1, "bi-KÅS", "be·cause", "”cause” stavas med au fast det låter å.", "I stayed home because it rained.", "eftersom"],
+  ["listen", "word", 1, "LISS-ön", "lis·ten", "Tyst t: lis-T-en.", "Listen to the music.", "lyssna"],
+  ["island", "word", 1, "AJ-lönd", "is·land", "Tyst s: i-S-land.", "They live on a small island.", "ö"],
+  ["answer", "word", 1, "AAN-sö", "an·swer", "Tyst w: ans-W-er.", "I know the answer.", "svar"],
+  ["write", "word", 1, "RAJT", "write", "Tyst w i början.", "Please write your name.", "skriva"],
+  ["know", "word", 1, "NÅO", "know", "Tyst k i början.", "I know her brother.", "veta, känna"],
+  ["laugh", "word", 1, "LAAF", "laugh", "”gh” låter f.", "They laugh at his jokes.", "skratta"],
+  ["enough", "word", 1, "i-NAFF", "e·nough", "”ough” låter aff.", "We have enough food.", "tillräckligt"],
+  ["busy", "word", 1, "BIZZ-i", "bu·sy", "u:et låter i.", "I am busy today.", "upptagen"],
+  ["half", "word", 1, "HAAF", "half", "Tyst l.", "Cut the cake in half.", "halv"],
+  ["February", "word", 2, "FEBB-ro-ä-ri", "Feb·ru·ar·y", "Glöm inte första r:et: Feb-R-uary.", "My birthday is in February.", "februari"],
+  ["library", "word", 2, "LAJ-brö-ri", "li·brar·y", "Två r: lib-R-ary.", "I borrowed a book from the library.", "bibliotek"],
+  ["different", "word", 2, "DIFF-rönt", "dif·fer·ent", "Dubbel-f, och e:et i mitten hörs knappt.", "This one is different.", "annorlunda"],
+  ["interesting", "word", 2, "INN-trö-sting", "in·ter·est·ing", "”ter” i mitten hörs knappt men ska stavas.", "That is an interesting idea.", "intressant"],
+  ["vegetable", "word", 2, "VEDJ-tö-böl", "veg·e·ta·ble", "e:et efter g hörs inte: veg-E-table.", "Eat a vegetable with every meal.", "grönsak"],
+  ["comfortable", "word", 2, "KAMF-tö-böl", "com·fort·a·ble", "Låter ”kamftöbel” men stavas comfort + able.", "This chair is comfortable.", "bekväm"],
+  ["chocolate", "word", 2, "TJÅCK-lött", "choc·o·late", "Mittens o hörs inte: choc-O-late.", "I love dark chocolate.", "choklad"],
+  ["business", "word", 2, "BIZZ-nöss", "busi·ness", "u låter i, och i:et efter s hörs inte: bus-I-ness.", "She runs her own business.", "företag"],
+  ["Thursday", "word", 2, "TÖÖZ-dej", "Thurs·day", "th är det läspande ljudet, och ”ur” låter ö.", "See you on Thursday.", "torsdag"],
+  ["foreign", "word", 2, "FÅRR-in", "for·eign", "”eign” låter in, med tyst g.", "He speaks a foreign language.", "utländsk"],
+  ["Stephen", "name", 2, "STIIV-ön", "Ste·phen", "ph låter v, inte f.", "Stephen is my neighbour.", ""],
+  ["Thomas", "name", 2, "TÅMM-ös", "Tho·mas", "h:et är tyst: låter som svenska Tomas.", "Thomas plays football.", ""],
+  ["necessary", "word", 3, "NESS-ö-sä-ri", "ne·ces·sa·ry", "Ett c, två s (”one collar, two sleeves”).", "Is it really necessary to leave so early?", "nödvändig"],
+  ["rhythm", "word", 3, "RIDH-öm", "rhy·thm", "Tyst h efter r, y som vokal och ingen vokal före m.", "She has a great sense of rhythm.", "rytm"],
+  ["conscience", "word", 3, "KÅNN-schens", "con·science", "Ordet ”science” gömmer sig inuti: con + science.", "He had a guilty conscience.", "samvete"],
+  ["Wednesday", "word", 3, "WENS-dej", "Wed·nes·day", "d:et och e:et i ”Wednes” hörs inte. Stava ”Wed-nes-day”.", "The meeting is on Wednesday.", "onsdag"],
+  ["receipt", "word", 3, "ri-SIIT", "re·ceipt", "Tyst p, och ”ei” efter c (i före e, utom efter c).", "Can I have a receipt, please?", "kvitto"],
+  ["colleague", "word", 3, "KÅLL-iig", "col·league", "Dubbel-l och slutet stavas som ”league”.", "My colleague helped me with the report.", "kollega"],
+  ["definitely", "word", 3, "DEFF-ö-nött-li", "de·fi·nite·ly", "Ordet ”finite” finns i mitten – inget a: defin-ITE-ly.", "I will definitely be there.", "definitivt"],
+  ["queue", "word", 3, "KJUU", "queue", "Bara q hörs – ”ueue” är fyra tysta bokstäver.", "There was a long queue outside.", "kö"],
+  ["separate", "word", 3, "SEPP-ö-rött", "sep·a·rate", "Det finns ”a rat” i mitten: sep-A-RAT-e.", "Keep the two groups separate.", "separat"],
+  ["Sean", "name", 3, "SCHÅÅN", "Se·an", "Irländskt: S låter sch, och ”ean” blir ett långt å.", "Sean plays the guitar.", ""],
+  ["Hugh", "name", 3, "HJUU", "Hugh", "”gh” är tyst: låter som ”you” med h före.", "Hugh is from London.", ""],
+  ["Leigh", "name", 3, "LII", "Leigh", "”eigh” låter bara i.", "Leigh works at the hospital.", ""],
+  ["Hermione", "name", 4, "hör-MAJ-ö-ni", "Her·mi·o·ne", "Betoning på MAJ, och slut-e:t uttalas (”-ni”).", "Hermione always does her homework.", ""],
+  ["Joaquin", "name", 4, "hoa-KIIN", "Joa·quin", "Spanskt: J låter som ett skrapigt h och ”qu” låter k.", "Joaquin starred in the film.", ""],
+  ["Leicester", "name", 4, "LESS-tö", "Lei·ces·ter", "Mittendelen ”ces” uttalas inte: Lei-cester blir ”Lester”.", "We took the train to Leicester.", ""],
+  ["Gloucester", "name", 4, "GLÅSS-tö", "Glou·ces·ter", "Som Leicester: ”ces” uttalas inte.", "We drove through Gloucester.", ""],
+  ["Edinburgh", "name", 4, "EDD-in-brö", "Ed·in·burgh", "”burgh” låter brö, inte borg.", "Edinburgh is the capital of Scotland.", ""],
+  ["Siobhan", "name", 5, "schi-VÅÅN", "Sio·bhan", "Irländskt: ”Sio” låter ”schi” och ”bh” låter v.", "Siobhan is coming to dinner tonight.", ""],
+  ["Niamh", "name", 5, "NIIV", "Ni·amh", "”mh” låter v och a:et hörs inte. Fem bokstäver, en stavelse.", "Niamh lives in Dublin.", ""],
+  ["Saoirse", "name", 5, "SÖR-scha", "Saoir·se", "”aoi” blir ett ö-ljud. Slutet ”se” låter ”scha”.", "Saoirse won the award last year.", ""],
+  ["Aoife", "name", 5, "II-fa", "Aoi·fe", "”Aoi” låter ii.", "Aoife sings in a band.", ""],
+  ["Worcestershire", "name", 5, "WOSS-tö-schö", "Wor·ces·ter·shire", "”rce” försvinner i uttalet och ”shire” blir ett kort ”schö”.", "Add a dash of Worcestershire sauce.", "Worcestershiresås / grevskap"],
+];
+const BANK_BY_TEXT = new Map(BANK.map(b => [b[0].toLowerCase(), b]));
+const LEVEL_LABEL = { 1: "Vardagsord", 2: "Lite knepigt", 3: "Klassiska fällor", 4: "Svåra namn", 5: "Irländska namn" };
+
+/** Gissad nivå för ord du lägger till själv. */
+function estimateLevel(text, kind) {
+  const t = text.trim().toLowerCase();
+  const keys = [...patternKeysIn(t)];
+  let lvl = kind === "name" ? 3 : 1;
+  if (keys.some(k => k.startsWith("tyst:") || k.startsWith("dubbel:"))) lvl++;
+  if (keys.length >= 3) lvl++;
+  if ([...t].length >= 10) lvl++;
+  return Math.max(1, Math.min(5, lvl));
+}
+
+/* ===== Data och lagring ===== */
+const LS_KEY = "ordtraning.v1";
+const DEFAULT_PROFILE = () => ({ settings: { accent: "en-US", newPerDay: 5, minutes: 5, playSentence: true },
+  patterns: {}, days: {}, seeded: false, updatedAt: 0 });
+let words = {};             // id -> word (med kort)
+let profile = DEFAULT_PROFILE();
+const S = () => profile.settings;
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function makeWord(text, kind, extra = {}) {
+  const now = Date.now();
+  return { id: uid(), text: text.trim(), kind, level: 3, guide: "", syll: "", trap: "", mnemo: "", example: "", translation: "", tags: [],
+    created: now, cards: { pron: newCard(now), spell: newCard(now) }, ...extra };
+}
+function bankWord(b, created) {
+  const [text, kind, level, guide, syll, trap, example, translation] = b;
+  const w = makeWord(text, kind, { level, guide, syll, trap, example, translation, tags: ["ordbank"], created });
+  w.cards.pron.due = w.cards.spell.due = created;
+  return w;
+}
+function seedWords() {
+  const base = Date.now();
+  BANK.forEach((b, i) => { const w = bankWord(b, base + i); words[w.id] = w; });
+  profile.seeded = true;
+  profile.version = 2;
+}
+/** Version 2: nivåer. Ge befintliga ord en nivå, lägg till ordbanken och
+ *  flytta tillbaka påbörjade ord på nivå 4–5 så att de kommer senare. */
+function migrate() {
+  if ((profile.version || 1) >= 2) return 0;
+  const now = Date.now();
+  let moved = 0;
+  for (const w of Object.values(words)) {
+    if (w.level == null) {
+      const b = BANK_BY_TEXT.get(w.text.toLowerCase());
+      w.level = b ? b[2] : estimateLevel(w.text, w.kind);
+    }
+    if (w.level >= 4 && (w.cards.pron.state !== 0 || w.cards.spell.state !== 0)) {
+      w.cards = { pron: newCard(now), spell: newCard(now) };
+      moved++;
+    }
+    Store.saveWord(w);
+  }
+  const base = now;
+  BANK.forEach((b, i) => {
+    if (!Object.values(words).some(w => w.text.toLowerCase() === b[0].toLowerCase())) {
+      const w = bankWord(b, base + i); words[w.id] = w; Store.saveWord(w);
+    }
+  });
+  profile.version = 2;
+  Store.saveProfile();
+  return moved;
+}
+
+const Store = {
+  db: null, uid: null, mode: "local", note: "",
+  chains: {}, active: 0, waiting: [],
+  async slot() { if (this.active < 3) { this.active++; return; } await new Promise(r => this.waiting.push(r)); this.active++; },
+  release() { this.active--; const n = this.waiting.shift(); if (n) n(); },
+  saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify({ words, profile })); } catch (e) {} },
+  loadLocal() {
+    try { const raw = localStorage.getItem(LS_KEY); if (!raw) return false; const d = JSON.parse(raw); words = d.words || {}; profile = { ...DEFAULT_PROFILE(), ...d.profile }; profile.settings = { ...DEFAULT_PROFILE().settings, ...(d.profile || {}).settings }; return true; }
+    catch (e) { return false; }
+  },
+  base() { return this.db.doc("data/users/" + this.uid + "/profile"); },
+  /** Seriell skrivkö per dokument: bara senaste versionen skrivs. */
+  write(key, refFn, dataFn) {
+    if (this.mode !== "db") return;
+    const c = this.chains[key] || (this.chains[key] = { running: false, pending: null });
+    c.pending = dataFn;
+    if (c.running) return;
+    c.running = true;
+    const run = async () => {
+      while (c.pending) {
+        const fn = c.pending; c.pending = null;
+        const data = fn();
+        await this.slot();
+        try {
+          if (data === null) await refFn().delete(); else await refFn().set(data);
+        } catch (e) {
+          if (e && e.code === "unavailable") { await new Promise(r => setTimeout(r, 800 + Math.random() * 800)); try { data === null ? await refFn().delete() : await refFn().set(data); } catch (e2) { this.fail(e2); } }
+          else this.fail(e);
+        } finally { this.release(); }
+      }
+      c.running = false;
+    };
+    run();
+  },
+  fail(e) { this.note = "Kunde inte spara till ditt konto just nu. Ändringarna finns kvar i den här webbläsaren."; console.warn(e); renderNoteOnly(); },
+  saveWord(w) {
+    this.saveLocal();
+    this.write("w:" + w.id, () => this.base().collection("words").doc(w.id), () => (words[w.id] ? JSON.parse(JSON.stringify(words[w.id])) : null));
+  },
+  deleteWord(id) {
+    delete words[id];
+    this.saveLocal();
+    this.write("w:" + id, () => this.base().collection("words").doc(id), () => null);
+  },
+  saveProfile() {
+    profile.updatedAt = Date.now();
+    this.saveLocal();
+    this.write("profile", () => this.base(), () => JSON.parse(JSON.stringify(profile)));
+  },
+  async init() {
+    const hadLocal = this.loadLocal();
+    let db = null, user = null;
+    try {
+      if (window.claude && window.claude.use) {
+        [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+      }
+      this.uid = user ? await user.id() : null;
+    } catch (e) { db = null; }
+    if (db && this.uid) {
+      this.db = db;
+      try {
+        const timeout = new Promise((_, rej) => setTimeout(() => rej({ code: "timeout" }), 10000));
+        const [p, ws] = await Promise.race([Promise.all([this.base().get(), this.base().collection("words").limit(1000).get()]), timeout]);
+        this.mode = "db";
+        if (p.exists) {
+          const remote = p.data();
+          profile = { ...DEFAULT_PROFILE(), ...JSON.parse(JSON.stringify(remote)) };
+          profile.settings = { ...DEFAULT_PROFILE().settings, ...(remote.settings || {}) };
+          words = {};
+          ws.docs.forEach(d => { if (d.exists) words[d.id] = JSON.parse(JSON.stringify(d.data())); });
+          this.saveLocal();
+        } else {
+          // Första gången på kontot: flytta upp lokal data, annars exempelord.
+          if (!hadLocal || !Object.keys(words).length) { words = {}; profile = DEFAULT_PROFILE(); seedWords(); }
+          this.saveProfile();
+          Object.values(words).forEach(w => this.saveWord(w));
+        }
+      } catch (e) {
+        this.mode = "db";
+        this.note = "Kunde inte nå ditt sparade konto just nu. Visar det som finns i den här webbläsaren.";
+        if (!hadLocal) { seedWords(); this.saveLocal(); }
+      }
+    } else {
+      this.mode = "local";
+      this.note = IS_PWA ? "" : "Sparas bara i den här webbläsaren (logga in på claude.ai för att spara till kontot).";
+      try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+      if (!hadLocal) { seedWords(); this.saveLocal(); }
+    }
+  },
+};
+
+/* ===== Ljud ===== */
+const Speech = {
+  token: 0,
+  voice() {
+    const all = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+    const lang = S().accent;
+    const same = all.filter(v => v.lang.replace("_", "-") === lang);
+    return same.find(v => /premium|enhanced|förbättrad/i.test(v.name)) || same.find(v => v.localService) || same[0]
+      || all.find(v => v.lang.startsWith("en")) || null;
+  },
+  speakOne(text, slow) {
+    return new Promise(resolve => {
+      if (!window.speechSynthesis) return resolve();
+      const u = new SpeechSynthesisUtterance(text);
+      const v = this.voice();
+      if (v) u.voice = v;
+      u.lang = S().accent;
+      u.rate = slow ? 0.55 : 0.95;
+      let done = false;
+      const fin = () => { if (!done) { done = true; resolve(); } };
+      u.onend = fin; u.onerror = fin;
+      setTimeout(fin, 1500 + text.length * 250 * (slow ? 2 : 1));
+      speechSynthesis.speak(u);
+    });
+  },
+  stop() { this.token++; try { speechSynthesis.cancel(); } catch (e) {} },
+  async play(steps) {
+    this.stop();
+    const my = this.token;
+    for (const st of steps) {
+      if (my !== this.token) return false;
+      if (st.say) await this.speakOne(st.say, st.slow);
+      else if (st.beep) { beep(); await wait(450); }
+      else if (st.pause) await wait(st.pause);
+    }
+    return my === this.token;
+  },
+  say(text, slow = false) { return this.play([{ say: text, slow }]); },
+};
+const wait = ms => new Promise(r => setTimeout(r, ms));
+let audioCtx = null;
+function beep() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = 880; o.type = "sine";
+    const t = audioCtx.currentTime;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.33);
+    o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + 0.35);
+  } catch (e) {}
+}
+function dictationSteps(w, slow) {
+  const steps = [{ say: w.text, slow }];
+  const sentence = S().playSentence ? w.example : "";
+  if (sentence) {
+    const idx = sentence.toLowerCase().indexOf(w.text.toLowerCase());
+    if (idx >= 0) {
+      const before = sentence.slice(0, idx).trim(), after = sentence.slice(idx + w.text.length).trim();
+      steps.push({ pause: 500 });
+      if (before) steps.push({ say: before, slow });
+      steps.push({ beep: true });
+      if (after && after !== ".") steps.push({ say: after, slow });
+      steps.push({ pause: 350 }, { say: w.text, slow });
+    }
+  }
+  return steps;
+}
+if (window.speechSynthesis) { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices(); }
+function haptic(kind) { try { navigator.vibrate && navigator.vibrate(kind === "bad" ? [30, 40, 30] : 20); } catch (e) {} }
+
+/* Inspelning: fungerar bara där webbläsaren tillåter mikrofonen. Annars döljs knappen. */
+const Rec = {
+  supported: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder),
+  blocked: (() => { try { return localStorage.getItem("ordtraning.nomic") === "1"; } catch (e) { return false; } })(),
+  recorder: null, chunks: [], url: null, recording: false, audio: null,
+  get available() { return this.supported && !this.blocked; },
+  async start() {
+    this.reset();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.recorder = new MediaRecorder(stream);
+      this.chunks = [];
+      this.recorder.ondataavailable = e => e.data.size && this.chunks.push(e.data);
+      this.recorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (this.chunks.length) this.url = URL.createObjectURL(new Blob(this.chunks, { type: this.recorder.mimeType || "audio/mp4" }));
+        render();
+      };
+      this.recorder.start();
+      this.recording = true;
+    } catch (e) {
+      this.blocked = true;
+      try { localStorage.setItem("ordtraning.nomic", "1"); } catch (e2) {}
+      toast("Mikrofonen är inte tillgänglig här. Säg ordet högt i stället.");
+    }
+  },
+  stop() { if (this.recording && this.recorder) { this.recording = false; this.recorder.stop(); } },
+  play() { return new Promise(res => { if (!this.url) return res(); this.audio = new Audio(this.url); this.audio.onended = res; this.audio.onerror = res; this.audio.play().catch(res); }); },
+  reset() { this.stop(); if (this.url) URL.revokeObjectURL(this.url); this.url = null; this.chunks = []; },
+};
+
+/* ===== Hjälpare ===== */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const app = document.getElementById("app");
+function toast(msg) {
+  const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; t.setAttribute("role", "status");
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2600);
+}
+function entries() {
+  const out = [];
+  for (const w of Object.values(words)) for (const sk of ["pron", "spell"]) out.push({ wid: w.id, skill: sk, card: w.cards[sk], created: w.created, level: w.level || 3 });
+  return out;
+}
+function introducedToday() {
+  const today = dayKey(Date.now());
+  return Object.values(words).filter(w => ["pron", "spell"].some(sk => w.cards[sk].introduced && dayKey(w.cards[sk].introduced) === today)).length;
+}
+/** Nivån på nästa nya ord som kommer, annars den högsta du börjat på. */
+function currentLevel() {
+  const next = newForToday(entries(), 1)[0];
+  if (next) return next.level;
+  const started = Object.values(words).filter(w => w.cards.pron.state !== 0 || w.cards.spell.state !== 0).map(w => w.level || 3);
+  return started.length ? Math.max(...started) : 0;
+}
+function status(w) {
+  const cs = [w.cards.pron, w.cards.spell];
+  if (cs.every(c => c.state === 0)) return "new";
+  if (cs.every(c => c.state === 2 && (c.s || 0) >= 21)) return "known";
+  return "learning";
+}
+const STATUS_LABEL = { new: "Ny", learning: "Lär mig", known: "Kan" };
+const RATING_LABEL = { 1: "Igen", 2: "Svårt", 3: "Bra", 4: "Lätt" };
+const SKILL = { pron: { label: "Uttal", color: "var(--pron)" }, spell: { label: "Stavning", color: "var(--spell)" } };
+/** Svensk översättning i facit (namn har ingen). */
+function sv(w) {
+  if (w.translation) return `<p class="sv">På svenska: <strong>${esc(w.translation)}</strong></p>`;
+  if (w.kind === "word") return `<p class="sv small">Ingen översättning än – lägg till under Ord.</p>`;
+  return "";
+}
+function info(icon, label, text) {
+  if (!text) return "";
+  return `<div class="info"><span class="ic" aria-hidden="true">${icon}</span><span class="lbl">${esc(label)}</span><span class="txt">${esc(text)}</span></div>`;
+}
+function wordExists(text, exceptId) {
+  const t = norm(text);
+  return Object.values(words).some(w => w.id !== exceptId && norm(w.text) === t);
+}
+
+/* ===== Vy-tillstånd ===== */
+let view = "home";          // home | session | extra | sentence | words | edit | import | stats | settings
+let session = null;         // pågående pass
+let ui = {};                // tillstånd för aktuellt kort/formulär
+
+function setTab(t) { view = t; ui = {}; render(); window.scrollTo(0, 0); }
+
+/* ===== Pass ===== */
+const MODE_TITLE = { daily: "Dagens pass", more: "Fler kort", hard: "Svåra ord", traps: "Stavningsfällor", extraNew: "Nya ord" };
+function trapPlan(limit = 15) {
+  const top = topPatterns(5);
+  if (!top.length) return [];
+  const keys = new Set(top.map(([k]) => k));
+  const ex = new Set(top.flatMap(([, p]) => p.examples.map(norm)));
+  const list = entries().filter(e => {
+    if (e.skill !== "spell" || e.card.state === 0) return false;
+    const w = words[e.wid];
+    return ex.has(norm(w.text)) || [...patternKeysIn(w.text)].some(k => keys.has(k));
+  }).sort((a, b) => (ex.has(norm(words[b.wid].text)) - ex.has(norm(words[a.wid].text))) || ((a.card.s || 0) - (b.card.s || 0)));
+  return list.slice(0, limit);
+}
+function startSession(mode, count) {
+  const now = Date.now(), all = entries();
+  let plan;
+  if (mode === "daily") plan = dailyPlan(all, now, S().newPerDay, introducedToday());
+  else if (mode === "more") plan = morePlan(all, now);
+  else if (mode === "hard") plan = hardPlan(all);
+  else if (mode === "traps") plan = trapPlan();
+  else plan = spreadSameWord(newForToday(all, count));
+  session = { mode, queue: plan.map(e => ({ wid: e.wid, skill: e.skill })), total: plan.length, results: [], start: now,
+    limit: mode === "daily" ? S().minutes * 60e3 : null, timeUp: false, done: false };
+  view = "session";
+  nextCard();
+}
+function nextCard() {
+  Rec.reset(); Speech.stop();
+  while (session.queue.length && !words[session.queue[0].wid]) session.queue.shift();
+  if (session.timeUp || !session.queue.length) { session.done = true; ui = {}; render(); return; }
+  const it = session.queue[0];
+  ui = { phase: it.skill === "pron" ? "prompt" : "answering", shownAt: Date.now(), typed: "", retry: "", key: uid() };
+  render();
+  window.scrollTo(0, 0);
+  if (it.skill === "spell") { Speech.play(dictationSteps(words[it.wid], false)).then(() => { if (ui.phase === "answering" && !ui.typed) ui.shownAt = Date.now(); }); }
+}
+function rate(r) {
+  const it = session.queue[0], w = words[it.wid];
+  const now = Date.now();
+  const card = w.cards[it.skill];
+  const updated = review(card, r, now);
+  updated.introduced = card.introduced || now;
+  updated.agains = (card.agains || 0) + (r === 1 ? 1 : 0);
+  w.cards[it.skill] = updated;
+  // Dagsstatistik
+  const dk = dayKey(now), day = profile.days[dk] || (profile.days[dk] = { pt: 0, pp: 0, st: 0, sp: 0 });
+  if (it.skill === "pron") { day.pt++; if (r > 1) day.pp++; } else { day.st++; if (r > 1) day.sp++; }
+  if (it.skill === "spell" && ui.typed && !isCorrect(w.text, ui.typed)) registerMistakes(w.text, ui.typed);
+  session.results.push({ text: w.text, skill: it.skill, r });
+  session.queue.shift();
+  if ((updated.state === 1 || updated.state === 3) && updated.due - now < 20 * 60e3) requeue(session.queue, it);
+  Store.saveWord(w);
+  Store.saveProfile();
+  if (session.limit && Date.now() - session.start >= session.limit) session.timeUp = true;
+  nextCard();
+}
+function registerMistakes(expected, typed) {
+  for (const k of detectPatterns(expected, typed)) {
+    const p = profile.patterns[k] || (profile.patterns[k] = { count: 0, lastSeen: 0, examples: [] });
+    p.count++; p.lastSeen = Date.now();
+    p.examples = [expected].concat(p.examples.filter(e => norm(e) !== norm(expected))).slice(0, 10);
+  }
+}
+function topPatterns(n) {
+  return Object.entries(profile.patterns).sort((a, b) => b[1].count - a[1].count || b[1].lastSeen - a[1].lastSeen).slice(0, n);
+}
+setInterval(() => {
+  if (view === "session" && session && !session.done && session.limit && !session.timeUp && Date.now() - session.start >= session.limit) {
+    session.timeUp = true;
+    const b = document.getElementById("timeup"); if (b) b.hidden = false;
+  }
+}, 5000);
+
+/* ===== Uppdateringar ===== */
+const APP_BUILD = "__BUILD__";   // ersätts med publiceringstiden när appen läggs ut på GitHub Pages
+const IS_PWA = !(window.claude && window.claude.use);
+const Updates = {
+  reg: null, reloading: false,
+  start() {
+    if (!IS_PWA || !("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("sw.js").then(r => {
+      this.reg = r;
+      r.addEventListener("updatefound", () => {
+        const nw = r.installing;
+        if (nw) nw.addEventListener("statechange", () => { if (nw.state === "installed" && navigator.serviceWorker.controller) this.maybeApply(); });
+      });
+      setInterval(() => r.update().catch(() => {}), 30 * 60e3);
+    }).catch(() => {});
+    navigator.serviceWorker.addEventListener("controllerchange", () => { if (this.reloading) return; this.reloading = true; location.reload(); });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && this.reg) this.reg.update().catch(() => {}); });
+  },
+  /** Byt till ny version, men aldrig mitt i ett pass. */
+  maybeApply(force) {
+    const w = this.reg && this.reg.waiting;
+    if (!w) return false;
+    if (force || !["session", "extra", "sentence"].includes(view)) { w.postMessage("skipWaiting"); return true; }
+    return false;
+  },
+  async check() {
+    if (!IS_PWA) { location.reload(); return "reload"; }
+    if (!this.reg) return "fel";
+    try {
+      await this.reg.update();
+      if (this.reg.waiting) { this.maybeApply(true); return "ny"; }
+      if (this.reg.installing) {
+        const nw = this.reg.installing;
+        nw.addEventListener("statechange", () => { if (nw.state === "installed") this.maybeApply(true); });
+        return "ny";
+      }
+      return "senaste";
+    } catch (e) { return "fel"; }
+  },
+};
+function buildLabel() {
+  if (APP_BUILD.startsWith("__")) return IS_PWA ? "utvecklingsversion" : "claude.ai-versionen";
+  const d = new Date(APP_BUILD);
+  return isNaN(d) ? APP_BUILD : d.toLocaleString("sv-SE", { dateStyle: "medium", timeStyle: "short" });
+}
+
+/* ===== Backup och flytt ===== */
+function backupText() {
+  return JSON.stringify({ app: "ordtraning", format: 1, exportedAt: new Date().toISOString(), words, profile });
+}
+function backupName() { return `ordtraning-backup-${dayKey(Date.now())}.json`; }
+async function exportBackup() {
+  const data = backupText(), name = backupName();
+  if (!IS_PWA) {
+    let dl = null;
+    try { dl = await window.claude.use("downloads"); } catch (e) {}
+    if (dl) {
+      try { await dl.save({ filename: name, data }); toast("Backupen är sparad"); return; }
+      catch (e) { if (e && e.code === "declined") return; }
+    }
+    ui.showBackupText = true; render(); return;
+  }
+  const file = new File([data], name, { type: "application/json" });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    navigator.share({ files: [file], title: "Ordträning backup" }).catch(() => {});
+    return;
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(file); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function copyBackup() {
+  const data = backupText();
+  const fallback = () => { ui.showBackupText = true; render(); };
+  try {
+    navigator.clipboard.writeText(data).then(() => toast("Datan är kopierad. Klistra in den under Importera i den andra appen."), fallback);
+  } catch (e) { fallback(); }
+}
+function parseBackup(text) {
+  const d = JSON.parse(String(text).trim());
+  if (!d || d.app !== "ordtraning" || !d.words || typeof d.words !== "object" || !d.profile) throw new Error("bad");
+  return d;
+}
+function readBackup(text) {
+  try { ui.pendingImport = parseBackup(text); ui.importError = ""; }
+  catch (e) { ui.pendingImport = null; ui.importError = "Det där ser inte ut som en backup från Ordträning. Kontrollera att du fått med hela texten."; }
+  render();
+}
+function importBackup(d) {
+  for (const id of Object.keys(words)) if (!d.words[id]) Store.deleteWord(id);
+  words = JSON.parse(JSON.stringify(d.words));
+  profile = { ...DEFAULT_PROFILE(), ...JSON.parse(JSON.stringify(d.profile)) };
+  profile.settings = { ...DEFAULT_PROFILE().settings, ...(d.profile.settings || {}) };
+  migrate();
+  Object.values(words).forEach(w => Store.saveWord(w));
+  Store.saveProfile();
+}
+
+/* ===== Rendering ===== */
+let ready = false;
+function render() {
+  if (!ready) return;
+  document.body.classList.toggle("in-session", ["session", "extra", "sentence"].includes(view));
+  document.querySelectorAll("#tabs button").forEach(b => {
+    const on = b.dataset.arg === view || (b.dataset.arg === "words" && ["edit", "import"].includes(view));
+    if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  });
+  const fn = { home: viewHome, session: viewSession, extra: viewExtra, sentence: viewSentence, words: viewWords, edit: viewEdit,
+    import: viewImport, stats: viewStats, settings: viewSettings }[view];
+  app.innerHTML = fn();
+  const auto = app.querySelector("[data-autofocus]");
+  if (auto) setTimeout(() => auto.focus(), 60);
+}
+function renderNoteOnly() { const n = document.getElementById("storenote"); if (n) { n.textContent = Store.note; n.hidden = !Store.note; } }
+
+function viewHome() {
+  const now = Date.now(), plan = dailyPlan(entries(), now, S().newPerDay, introducedToday());
+  const reviews = plan.filter(e => e.card.state !== 0).length;
+  const newWords = new Set(plan.filter(e => e.card.state === 0).map(e => e.wid)).size;
+  const mins = Math.max(1, Math.min(S().minutes, Math.ceil(estimateSeconds(plan) / 60)));
+  const st = streak(Object.keys(profile.days), now);
+  const doneToday = !!profile.days[dayKey(now)];
+  const empty = !Object.keys(words).length;
+  const detail = [reviews ? `${reviews} repetitioner` : "", newWords ? `${newWords} nya ord` : ""].filter(Boolean).join(" + ");
+  return `
+  <div class="row" style="padding-top:8px"><h1>Idag</h1></div>
+  <p class="note" id="storenote" ${Store.note ? "" : "hidden"}>${esc(Store.note)}</p>
+  ${(() => { const lv = currentLevel(); return lv ? `<div class="row"><span class="pill">Nivå ${lv} av 5 · ${LEVEL_LABEL[lv]}</span></div>` : ""; })()}
+  <div class="card">
+    <div class="streak"><span class="n">${st}</span><span class="muted">${st === 1 ? "dag i rad" : "dagar i rad"}</span></div>
+    <p class="muted small">${doneToday ? (plan.length ? "Du har övat i dag. Det finns mer om du vill." : "Dagens pass är klart. Snyggt.") : st ? "Kör dagens pass för att hålla igång." : "Kör ditt första pass – det tar bara några minuter."}</p>
+  </div>
+  ${plan.length ? `
+    <button class="btn primary hero-start" data-act="start" data-arg="daily">
+      <span class="big">Starta dagens pass</span>
+      <span class="sub">${plan.length} kort · ca ${mins} min</span>
+    </button>
+    <p class="muted small" style="text-align:center">${esc(detail)}</p>
+    <button class="btn ghost" data-act="go" data-arg="extra">Kör mer</button>`
+  : `
+    <div class="card"><p>${empty ? "Lägg till ord under fliken Ord för att börja." : "Inget kvar att repetera i dag."}</p></div>
+    <button class="btn" data-act="go" data-arg="extra" ${empty ? "disabled" : ""}>Kör mer</button>`}
+  `;
+}
+
+function ratingButtons(card, suggested) {
+  const p = preview(card, Date.now());
+  return `<div class="rating" role="group" aria-label="Betyg">${[1, 2, 3, 4].map(r =>
+    `<button class="rate ${suggested === r ? "suggested" : ""}" data-r="${r}" data-act="rate" data-arg="${r}" aria-label="${RATING_LABEL[r]}, nästa gång om ${ivlText(p[r])}">${RATING_LABEL[r]}<small>${ivlText(p[r])}</small></button>`).join("")}</div>`;
+}
+
+function viewSession() {
+  if (session.done) return viewSummary();
+  const it = session.queue[0], w = words[it.wid];
+  const doneCount = session.results.length;
+  const pct = Math.min(100, Math.round(100 * doneCount / Math.max(1, doneCount + session.queue.length)));
+  const top = `
+  <div class="topbar">
+    <button class="btn ghost" style="width:auto;padding:0 4px" data-act="endSession">Avsluta</button>
+    <span class="count">${session.queue.length} kvar</span>
+  </div>
+  <div class="progress" aria-hidden="true"><i style="width:${pct}%"></i></div>
+  <div class="banner" id="timeup" ${session.timeUp ? "" : "hidden"}>Tiden är ute. Gör klart det här kortet, sedan kommer sammanfattningen.</div>
+  <div class="row"><span class="eyebrow"><span class="dot" style="background:${SKILL[it.skill].color}"></span>${SKILL[it.skill].label}</span><span class="spacer"></span><span class="pill">${w.kind === "name" ? "Namn" : "Ord"}</span></div>`;
+  return top + (it.skill === "pron" ? viewPron(w) : viewSpell(w));
+}
+
+function viewPron(w) {
+  const card = w.cards.pron;
+  const word = `<div class="word-big">${esc(w.text)}</div>`;
+  if (ui.phase === "prompt") {
+    return `${word}
+    <p class="muted" style="text-align:center">Säg ordet högt ur minnet innan du lyssnar.</p>
+    ${Rec.available ? `
+      <button class="mic ${Rec.recording ? "rec" : ""}" data-act="mic" aria-label="${Rec.recording ? "Stoppa inspelning" : "Spela in"}">${Rec.recording ? "■" : "🎙"}</button>
+      <p class="muted small" style="text-align:center">${Rec.recording ? "Spelar in… tryck för att stoppa" : Rec.url ? "Inspelat ✓" : "Spela in om du vill jämföra (valfritt)"}</p>` : ""}
+    <button class="btn primary" data-act="reveal">Facit</button>`;
+  }
+  if (ui.phase === "again") {
+    return `${word}${sv(w)}
+    <div class="card">
+      ${info("💬", "Uttal på svenska", w.guide || "(ingen uttalsguide än – lägg till under Ord)")}
+      ${info("⚠️", "Fälla", w.trap)}
+      ${info("💡", "Minnesbild", w.mnemo)}
+      ${w.mnemo ? "" : `<p class="muted small">Tips: hitta på en minnesbild för ordet under Ord. Namn blir mycket lättare att minnas med en krok.</p>`}
+    </div>
+    <div class="btns"><button class="btn small" data-act="say">🔊 Lyssna</button><button class="btn small" data-act="saySlow">🐢 Långsamt</button></div>
+    <p class="muted small">Kortet kommer igen senare i passet.</p>
+    <button class="btn primary" data-act="rate" data-arg="1">Fortsätt</button>`;
+  }
+  return `${word}${sv(w)}
+  <div class="btns"><button class="btn small" data-act="say">🔊 Igen</button><button class="btn small" data-act="saySlow">🐢 Långsamt</button></div>
+  ${Rec.url ? `<div class="btns"><button class="btn small" data-act="playMe">Min röst</button><button class="btn small" data-act="compare">Jämför</button></div>` : ""}
+  ${(w.guide || w.mnemo) ? `<div class="card">${info("💬", "Uttal på svenska", w.guide)}${info("💡", "Minnesbild", w.mnemo)}</div>` : ""}
+  <h3>Hur gick det?</h3>
+  ${ratingButtons(card, null).replace('data-act="rate" data-arg="1"', 'data-act="pronAgain" data-arg="1"')}`;
+}
+
+function diffHtml(expected, typed) {
+  const ops = diff(expected, typed);
+  const you = ops.map(o => o.op === "m" ? `<span class="d-ok">${esc(o.e)}</span>` : o.op === "s" ? `<span class="d-bad">${esc(o.t)}</span>` : o.op === "miss" ? `<span class="d-miss">_</span>` : `<span class="d-extra">${esc(o.t)}</span>`).join("");
+  const right = ops.map(o => o.op === "m" ? `<span class="d-plain">${esc(o.e)}</span>` : o.op === "s" ? `<span class="d-bad">${esc(o.e)}</span>` : o.op === "miss" ? `<span class="d-miss">${esc(o.e)}</span>` : "").join("");
+  return `<div class="card diff">
+    <div><div class="muted small">Du skrev</div><div class="line">${you}</div></div>
+    <div><div class="muted small">Rätt</div><div class="line">${right}</div></div>
+    <div class="legend"><span><i class="dot" style="background:var(--good)"></i>rätt</span><span><i class="dot" style="background:var(--again)"></i>fel</span><span><i class="dot" style="background:var(--hard)"></i>saknas</span></div>
+  </div>`;
+}
+const answerInput = (id, value) => `<input id="${id}" class="answer" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" aria-label="Skriv ordet" placeholder="Skriv här" value="${esc(value)}" data-autofocus>`;
+
+function viewSpell(w) {
+  const card = w.cards.spell;
+  const listen = `<div class="btns"><button class="btn small" data-act="dictate">🔊 Lyssna</button><button class="btn small" data-act="dictateSlow">🐢 Långsamt</button></div>`;
+  if (ui.phase === "answering") {
+    const blank = S().playSentence && w.example ? w.example.replace(new RegExp(w.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), "_____") : "";
+    return `<h2>Lyssna och skriv ordet</h2>${listen}
+    ${w.kind === "name" ? info("💡", "Ledtråd – din minnesbild", w.mnemo) : info("📖", "Betyder", w.translation)}
+    ${info("❝", "Mening", blank)}
+    <form data-form="spell" class="stack">${answerInput("ans", ui.typed)}<button class="btn primary" type="submit">Rätta</button></form>`;
+  }
+  if (ui.phase === "result") {
+    if (isCorrect(w.text, ui.typed)) {
+      return `<div class="card flash-ok"><h2 style="color:var(--good)">Rätt!</h2><div class="word-big" style="text-align:left;padding:0">${esc(w.text)}</div>${sv(w).replace('class="sv', 'style="text-align:left" class="sv')}${info("⚠️", "Fälla", w.trap)}</div>
+      <p class="muted small">Förslag: ${RATING_LABEL[ui.suggested]}. Ändra om du vill.</p>${ratingButtons(card, ui.suggested)}`;
+    }
+    return `<h2 style="color:var(--again)" class="flash-bad">Inte riktigt</h2>
+    ${diffHtml(w.text, ui.typed)}
+    ${sv(w)}
+    <div class="card">${info("✂️", "Delar", w.syll || w.text)}${info("⚠️", "Fälla", w.trap)}${info("💡", "Minnesbild", w.mnemo)}</div>
+    <button class="btn primary" data-act="retryShow">Skriv igen från minnet</button>
+    <button class="btn ghost" data-act="skipRetry">Hoppa över</button>`;
+  }
+  if (ui.phase === "retryShow") {
+    return `<h2>Titta noga</h2><div class="word-big">${esc(w.syll || w.text)}</div>
+    <div class="card">${info("⚠️", "Fälla", w.trap)}</div>
+    <p class="muted" style="text-align:center" id="countdown">Döljs om 3…</p>`;
+  }
+  if (ui.phase === "retryTyping") {
+    return `<h2>Skriv det nu ur minnet</h2>
+    <form data-form="retry" class="stack">${answerInput("ans2", ui.retry)}<button class="btn primary" type="submit">Kontrollera</button></form>`;
+  }
+  // retryResult
+  const ok = ui.retry && isCorrect(w.text, ui.retry);
+  return `${ui.retry ? (ok ? `<h2 style="color:var(--good)">Nu satt det!</h2>` : `<h2 style="color:var(--hard)">Nästan – kortet kommer snart igen</h2>${diffHtml(w.text, ui.retry)}`) : ""}
+  <div class="word-big">${esc(w.text)}</div>${sv(w)}
+  <p class="muted small">Förslag: ${RATING_LABEL[ui.suggested]}. Ändra om du vill.</p>${ratingButtons(card, ui.suggested)}`;
+}
+
+function viewSummary() {
+  const r = session.results;
+  const acc = sk => { const x = r.filter(e => e.skill === sk); return x.length ? Math.round(100 * x.filter(e => e.r > 1).length / x.length) + " %" : "–"; };
+  const score = {};
+  r.forEach(e => { if (e.r <= 2) score[e.text] = (score[e.text] || 0) + (e.r === 1 ? 3 : 1); });
+  const hardest = Object.entries(score).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 5).map(e => e[0]);
+  return `
+  <div class="topbar"><h2>${esc(MODE_TITLE[session.mode])}</h2></div>
+  ${r.length ? `
+    <h1>Bra jobbat!</h1>
+    <div class="stats3">
+      <div class="tile"><div class="v">${r.length}</div><div class="k">kort</div></div>
+      <div class="tile"><div class="v" style="color:var(--pron)">${acc("pron")}</div><div class="k">uttal</div></div>
+      <div class="tile"><div class="v" style="color:var(--spell)">${acc("spell")}</div><div class="k">stavning</div></div>
+    </div>
+    ${hardest.length ? `<div class="card"><h3>Svårast i dag</h3>${hardest.map(t => `<div>🔥 ${esc(t)}</div>`).join("")}</div>` : ""}
+    ${session.mode === "daily" && session.queue.length ? `<p class="muted small">${session.queue.length} kort fick vänta till nästa gång. Det är helt okej.</p>` : ""}`
+  : `<div class="card"><p class="muted">Inga kort att visa här just nu.</p></div>`}
+  <button class="btn primary" data-act="finish">Klar för idag</button>
+  <button class="btn" data-act="go" data-arg="extra">Kör mer</button>`;
+}
+
+function viewExtra() {
+  const now = Date.now(), all = entries();
+  const more = morePlan(all, now).length, hard = hardPlan(all).length, traps = trapPlan().length;
+  const sent = sentenceWords(100).length;
+  const newAvail = new Set(all.filter(e => e.card.state === 0).map(e => e.wid)).size;
+  if (ui.extraNew == null) ui.extraNew = Math.min(3, Math.max(1, newAvail));
+  const intro = introducedToday();
+  const endTomorrow = endOfDay(now) + DAY;
+  const tomorrow = all.filter(e => e.card.state !== 0 && e.card.due < endTomorrow).length + ui.extraNew * 2;
+  const warn = intro + ui.extraNew > S().newPerDay * 2 || tomorrow > 40;
+  const opt = (act, arg, title, detail, n) => `<button class="item" data-act="${act}" data-arg="${arg}" ${n ? "" : "disabled"}><span><span class="t">${title}</span><br><span class="s">${detail}</span></span><span class="meta muted">${n}</span></button>`;
+  return `
+  <div class="topbar"><h2>Kör mer</h2><span class="spacer"></span><button class="btn ghost" style="width:auto" data-act="finish">Klar</button></div>
+  <div class="list">
+    ${opt("start", "more", "Fler kort", "Förfallna och snart förfallna", more)}
+    ${opt("start", "hard", "Svåra ord", "Kort du missat flera gånger", hard)}
+    ${opt("start", "traps", "Stavningsfällor", "Riktat mot dina vanligaste stavfel", traps)}
+    ${opt("go", "sentence", "Meningsövning", "Säg och skriv en egen mening", sent)}
+  </div>
+  <div class="card">
+    <h3>Nya ord utöver dagens gräns</h3>
+    ${newAvail ? `
+      <div class="row"><button class="btn small" style="width:56px" data-act="extraNew" data-arg="-1" aria-label="Färre">−</button>
+      <span class="grow" style="text-align:center;font-weight:700">${ui.extraNew} nya ord</span>
+      <button class="btn small" style="width:56px" data-act="extraNew" data-arg="1" aria-label="Fler">+</button></div>
+      ${warn ? `<p class="banner small">Du har redan börjat på ${intro} nya ord i dag, och morgondagens pass ser ut att bli ca ${tomorrow} kort. Fler nya ord nu ger ett längre pass i morgon.</p>` : ""}
+      <button class="btn primary" data-act="startNew">Starta med ${ui.extraNew} nya ord</button>
+      <p class="muted small">${newAvail} nya ord väntar.</p>`
+    : `<p class="muted">Inga nya ord kvar. Lägg till fler under Ord.</p>`}
+  </div>`;
+}
+
+function sentenceWords(n) {
+  const list = Object.values(words).filter(w => w.cards.pron.state === 2 || w.cards.spell.state === 2);
+  for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
+  return list.slice(0, n);
+}
+function viewSentence() {
+  if (!ui.list) { ui.list = sentenceWords(5).map(w => w.id); ui.i = 0; ui.sentence = ""; ui.check = null; }
+  const head = `<div class="topbar"><h2>Meningsövning</h2><span class="spacer"></span><button class="btn ghost" style="width:auto" data-act="go" data-arg="extra">Tillbaka</button></div>`;
+  if (!ui.list.length) return head + `<div class="card"><p class="muted">Meningsövningen använder ord du redan har repeterat. Kör några pass först.</p></div>`;
+  if (ui.i >= ui.list.length) return head + `<h1>Klart!</h1><button class="btn primary" data-act="go" data-arg="extra">Tillbaka</button>`;
+  const w = words[ui.list[ui.i]];
+  let res = "";
+  if (ui.check) {
+    res = ui.check.correct ? `<div class="card flash-ok"><h3 style="color:var(--good)">”${esc(w.text)}” är rättstavat!</h3></div>`
+      : ui.check.closest ? `<h3 style="color:var(--again)">Kolla stavningen av ordet</h3>${diffHtml(w.text, ui.check.closest)}`
+      : `<div class="card"><h3 style="color:var(--hard)">Ordet ”${esc(w.text)}” finns inte med i meningen.</h3></div>`;
+  }
+  return `${head}
+  <p class="muted small">${ui.i + 1} av ${ui.list.length}</p>
+  <div class="word-big">${esc(w.text)}</div>
+  <p class="muted">1. Säg en egen mening med ordet högt.<br>2. Skriv meningen.</p>
+  <form data-form="sentence" class="stack">
+    <div class="field"><label for="sent">Din mening</label><textarea id="sent" autocorrect="off" spellcheck="false" autocapitalize="sentences">${esc(ui.sentence)}</textarea></div>
+    ${ui.check ? res + `<button class="btn primary" type="button" data-act="sentNext">Nästa</button>` : `<button class="btn primary" type="submit">Kontrollera</button>`}
+  </form>`;
+}
+
+/* --- Ord --- */
+function viewWords() {
+  const q = norm(ui.q || "");
+  const list = Object.values(words).sort((a, b) => b.created - a.created)
+    .filter(w => !q || norm(w.text).includes(q) || norm(w.translation).includes(q) || w.tags.some(t => norm(t).includes(q)));
+  return `
+  <div class="row" style="padding-top:8px"><h1>Ord</h1><span class="muted">${Object.keys(words).length}</span><span class="spacer"></span>
+    <button class="btn small" style="width:auto" data-act="go" data-arg="import">Importera</button>
+    <button class="btn primary small" style="width:auto" data-act="newWord">+ Lägg till</button></div>
+  <div class="field"><input id="search" type="search" placeholder="Sök ord" value="${esc(ui.q || "")}" autocomplete="off" autocorrect="off" aria-label="Sök ord"></div>
+  <div id="wordlist">${wordListHtml()}</div>`;
+}
+function wordListHtml() {
+  const q = norm(ui.q || "");
+  const list = Object.values(words).sort((a, b) => b.created - a.created)
+    .filter(w => !q || norm(w.text).includes(q) || norm(w.translation).includes(q) || w.tags.some(t => norm(t).includes(q)));
+  return `${list.length ? `<div class="list">${list.map(w => {
+    const st = status(w);
+    return `<button class="item" data-act="editWord" data-arg="${w.id}">
+      <span style="min-width:0"><span class="t">${esc(w.text)}</span><br><span class="s">Nivå ${w.level || 3}${w.guide ? " · " + esc(w.guide) : ""}${w.mnemo ? "" : " · 💡 minnesbild saknas"}</span></span>
+      <span class="meta pill status-${st}">${STATUS_LABEL[st]}</span></button>`;
+  }).join("")}</div>` : `<div class="card"><p class="muted">${q ? "Inga ord matchar sökningen." : "Inga ord än. Tryck på + Lägg till."}</p></div>`}`;
+}
+function viewEdit() {
+  const w = ui.id ? words[ui.id] : null;
+  const f = ui.form || (ui.form = w ? { level: String(w.level || 3), text: w.text, kind: w.kind, guide: w.guide, syll: w.syll, trap: w.trap, mnemo: w.mnemo, example: w.example, translation: w.translation, tags: w.tags.join(", ") }
+    : { level: "", text: "", kind: "word", guide: "", syll: "", trap: "", mnemo: "", example: "", translation: "", tags: "" });
+  const fld = (id, label, ph, area) => `<div class="field"><label for="f-${id}">${label}</label>${area
+    ? `<textarea id="f-${id}" data-f="${id}" placeholder="${esc(ph)}">${esc(f[id])}</textarea>`
+    : `<input id="f-${id}" data-f="${id}" placeholder="${esc(ph)}" value="${esc(f[id])}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">`}</div>`;
+  const cardLine = sk => { const c = w.cards[sk]; return `<div class="row"><span class="eyebrow"><span class="dot" style="background:${SKILL[sk].color}"></span>${SKILL[sk].label}</span><span class="spacer"></span><span class="muted small">${c.state === 0 ? "Ny" : c.state === 2 ? (c.due <= Date.now() ? "Förfaller nu" : "Nästa om " + ivlText(c.due - Date.now())) : "Lär mig"}</span></div>`; };
+  return `
+  <div class="topbar"><button class="btn ghost" style="width:auto;padding:0 4px" data-act="go" data-arg="words">‹ Ord</button></div>
+  <h1>${w ? esc(w.text) : "Nytt ord"}</h1>
+  <form data-form="word" class="stack">
+    <div class="row"><div class="field grow"><label for="f-text">Ordet</label><input id="f-text" data-f="text" value="${esc(f.text)}" placeholder="t.ex. Siobhan" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ${w ? "" : "data-autofocus"}></div>
+      <button type="button" class="btn small" style="width:56px;align-self:flex-end" data-act="sayField" aria-label="Lyssna">🔊</button></div>
+    <div class="seg" role="group" aria-label="Typ"><button type="button" data-act="kind" data-arg="word" aria-pressed="${f.kind === "word"}">Vanligt ord</button><button type="button" data-act="kind" data-arg="name" aria-pressed="${f.kind === "name"}">Namn</button></div>
+    <div class="field"><label>Svårighet ${f.level ? "" : "(gissas automatiskt om du inte väljer)"}</label>
+      <div class="seg" role="group" aria-label="Svårighet">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-act="level" data-arg="${n}" aria-pressed="${f.level === String(n)}">${n}</button>`).join("")}</div>
+      <span class="muted small">${f.level ? esc(LEVEL_LABEL[f.level]) + ". " : ""}Nya ord kommer i ordning från 1 till 5.</span></div>
+    ${ui.dup ? `<p style="color:var(--again)">Ordet finns redan i listan.</p>` : ""}
+    <div class="card">
+      <h3>Gör ordet minnesvärt</h3>
+      <p class="muted small">${f.kind === "name" ? "Namn är svåra att minnas eftersom de saknar betydelse. En egen, gärna konstig minnesbild ger hjärnan en krok att hänga uttalet på." : "Vad är konstigt med ordet? Om du skriver ner fällan lägger du märke till den nästa gång."}</p>
+      ${fld("mnemo", "Minnesbild", f.kind === "name" ? "t.ex. ”Siobhan shivar vid bh-skylten”" : "En bild, en känsla, en ramsa…", true)}
+      ${fld("trap", "Fälla", "t.ex. ”bh låter v”", false)}
+    </div>
+    <details class="card" ${ui.more ? "open" : ""}><summary style="font-weight:700;cursor:pointer">Mer (valfritt)</summary>
+      <div class="stack" style="margin-top:12px">
+      ${fld("guide", "Uttal på svenska", "t.ex. shi-VÅN")}
+      ${fld("syll", "Stavningsdelar", "t.ex. Sio·bhan")}
+      ${fld("example", "Exempelmening", "", true)}
+      ${fld("translation", "Svensk översättning", "")}
+      ${fld("tags", "Taggar (kommaseparerade)", "")}
+      </div></details>
+    <button class="btn primary" type="submit">Spara</button>
+  </form>
+  ${w ? `<div class="card">${cardLine("pron")}${cardLine("spell")}</div>
+    ${ui.confirmDelete ? `<div class="card"><p>Radera ”${esc(w.text)}” och dess framsteg?</p><div class="btns"><button class="btn" data-act="cancelDelete">Avbryt</button><button class="btn" style="background:var(--again);color:#fff" data-act="doDelete">Radera</button></div></div>`
+    : `${(w.cards.pron.state || w.cards.spell.state) ? `<button class="btn" data-act="postpone">Börja om senare</button><p class="muted small">Ordet blir nytt igen och kommer tillbaka när du kommit upp till dess nivå.</p>` : ""}
+       <button class="btn ghost" style="color:var(--again)" data-act="askDelete">Radera ordet</button>`}` : ""}`;
+}
+function viewImport() {
+  return `
+  <div class="topbar"><button class="btn ghost" style="width:auto;padding:0 4px" data-act="go" data-arg="words">‹ Ord</button></div>
+  <h1>Importera ord</h1>
+  <form data-form="import" class="stack">
+    <div class="field"><label for="imp">Klistra in, ett ord per rad</label><textarea id="imp" style="min-height:220px;font-family:var(--font-mono)" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Siobhan&#10;necessary&#10;Leicester"></textarea></div>
+    <div class="field"><label for="impkind">Typ</label><select id="impkind"><option value="auto">Automatiskt (stor bokstav = namn)</option><option value="name">Namn</option><option value="word">Vanliga ord</option></select></div>
+    ${ui.importResult ? `<p class="note">${esc(ui.importResult)}</p>` : ""}
+    <button class="btn primary" type="submit">Importera</button>
+  </form>`;
+}
+
+/* --- Statistik --- */
+function chartSvg(days) {
+  const keys = [];
+  const d = new Date(); d.setHours(12, 0, 0, 0);
+  for (let i = days - 1; i >= 0; i--) { const x = new Date(d); x.setDate(d.getDate() - i); keys.push(dayKey(x)); }
+  const Wd = 340, H = 180, L = 36, R = 10, T = 12, B = 26;
+  const x = i => L + (keys.length === 1 ? 0 : i * (Wd - L - R) / (keys.length - 1));
+  const y = v => T + (100 - v) * (H - T - B) / 100;
+  const series = [["pt", "pp", "var(--pron)"], ["st", "sp", "var(--spell)"]].map(([tot, pass, color]) => {
+    const pts = keys.map((k, i) => { const day = profile.days[k]; return day && day[tot] ? [x(i), y(100 * day[pass] / day[tot])] : null; }).filter(Boolean);
+    if (!pts.length) return "";
+    return `<polyline fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${pts.map(p => p.join(",")).join(" ")}"/>` +
+      pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="${color}"/>`).join("");
+  }).join("");
+  const grid = [0, 50, 100].map(v => `<line x1="${L}" x2="${Wd - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v} %</text>`).join("");
+  const fmt = k => { const [, m, dd] = k.split("-"); return `${+dd}/${+m}`; };
+  const labels = `<text x="${x(0)}" y="${H - 6}" text-anchor="start">${fmt(keys[0])}</text><text x="${x(keys.length - 1)}" y="${H - 6}" text-anchor="end">${fmt(keys[keys.length - 1])}</text>`;
+  return `<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Träffsäkerhet per dag för uttal och stavning">${grid}${labels}${series}</svg>`;
+}
+function viewStats() {
+  const range = ui.range || 30;
+  const st = streak(Object.keys(profile.days), Date.now());
+  const all = Object.values(words);
+  const hasData = Object.keys(profile.days).length > 0;
+  const pats = topPatterns(5);
+  return `
+  <div class="row" style="padding-top:8px"><h1>Statistik</h1></div>
+  <div class="stats3">
+    <div class="tile"><div class="v">${st}</div><div class="k">${st === 1 ? "dag i rad" : "dagar i rad"}</div></div>
+    <div class="tile"><div class="v" style="color:var(--good)">${all.filter(w => status(w) === "known").length}</div><div class="k">ord du kan</div></div>
+    <div class="tile"><div class="v">${all.length}</div><div class="k">ord totalt</div></div>
+  </div>
+  <div class="card chart">
+    <div class="row"><h3>Träffsäkerhet per dag</h3></div>
+    <div class="seg" role="group" aria-label="Period">${[7, 30, 90].map(n => `<button data-act="range" data-arg="${n}" aria-pressed="${range === n}">${n} dagar</button>`).join("")}</div>
+    ${hasData ? chartSvg(range) : `<p class="muted">Ingen data än. Kör ett pass!</p>`}
+    <div class="legend"><span><i class="dot" style="background:var(--pron)"></i>Uttal</span><span><i class="dot" style="background:var(--spell)"></i>Stavning</span><span>Andel kort som inte fick ”Igen”</span></div>
+  </div>
+  <div class="card">
+    <h3>Dina vanligaste stavfel</h3>
+    ${pats.length ? pats.map(([k, p]) => `<div><div class="row"><strong>${esc(patternName(k))}</strong><span class="spacer"></span><span class="muted" style="font-variant-numeric:tabular-nums">${p.count}×</span></div><div class="muted small">${esc(p.examples.slice(0, 4).join(", "))}</div></div>`).join("")
+      : `<p class="muted">Inga felmönster än.</p>`}
+  </div>`;
+}
+
+/* --- Inställningar --- */
+function viewSettings() {
+  const s = S();
+  return `
+  <div class="row" style="padding-top:8px"><h1>Inställningar</h1></div>
+  <div class="card">
+    <h3>Uppläsning</h3>
+    <div class="seg" role="group" aria-label="Röst"><button data-act="accent" data-arg="en-US" aria-pressed="${s.accent === "en-US"}">Amerikansk</button><button data-act="accent" data-arg="en-GB" aria-pressed="${s.accent === "en-GB"}">Brittisk</button></div>
+    <button class="btn small" data-act="testVoice">🔊 Testa rösten</button>
+    <label class="row"><input type="checkbox" id="playSentence" ${s.playSentence ? "checked" : ""} style="width:22px;height:22px"> <span>Läs exempelmening vid diktamen</span></label>
+    <p class="muted small">Hörs inget? Kolla att ljudet är på (sidoknappen på iPhonen). Bättre röster: Inställningar → Hjälpmedel → Uppläst innehåll → Röster → Engelska, ladda ner en ”Förbättrad” röst.</p>
+  </div>
+  <div class="card">
+    <h3>Dagligt pass</h3>
+    <div class="row"><span class="grow">Nya ord per dag</span>
+      <button class="btn small" style="width:52px" data-act="newPerDay" data-arg="-1" aria-label="Färre">−</button>
+      <strong style="width:28px;text-align:center;font-variant-numeric:tabular-nums">${s.newPerDay}</strong>
+      <button class="btn small" style="width:52px" data-act="newPerDay" data-arg="1" aria-label="Fler">+</button></div>
+    <div class="seg" role="group" aria-label="Passets längd"><button data-act="minutes" data-arg="5" aria-pressed="${s.minutes === 5}">5 min</button><button data-act="minutes" data-arg="10" aria-pressed="${s.minutes === 10}">10 min</button></div>
+    <p class="muted small">Varje nytt ord ger två kort: uttal och stavning. Få nya ord och korta pass ger bäst resultat över tid.</p>
+  </div>
+  <div class="card">
+    <h3>Daglig påminnelse</h3>
+    <p class="muted small">En webbsida kan inte skicka egna notiser. Gör så här i stället: öppna appen <strong>Genvägar</strong> → Automatisering → Ny automatisering → <strong>Tid på dagen</strong> (välj tid, ”Kör omedelbart”) → åtgärden <strong>Öppna URL</strong> med länken till den här sidan. Eller lägg en upprepad påminnelse i Påminnelser.</p>
+  </div>
+  <div class="card">
+    <h3>Uppdateringar</h3>
+    <p class="muted small">Version: ${esc(buildLabel())}</p>
+    <button class="btn small" data-act="checkUpdate">Sök efter uppdatering</button>
+    ${ui.updMsg ? `<p class="note" role="status">${esc(ui.updMsg)}</p>` : ""}
+    <p class="muted small">${IS_PWA ? "Appen söker också själv när du öppnar den. En ny version laddas aldrig in mitt i ett pass." : "Ändringar kommer också automatiskt när du öppnar sidan."}</p>
+  </div>
+  <div class="card">
+    <h3>Backup och flytt</h3>
+    <p class="muted small">Spara alla ord, ditt schema och din statistik i en fil eller som text. Läs in den i den andra appen (eller i samma, om du bytt telefon).</p>
+    <div class="btns"><button class="btn small" data-act="exportBackup">Exportera fil</button><button class="btn small" data-act="copyBackup">Kopiera som text</button></div>
+    ${ui.showBackupText ? `<div class="field"><label for="backupOut">Markera allt och kopiera</label><textarea id="backupOut" readonly style="font-family:var(--font-mono);font-size:12px">${esc(backupText())}</textarea></div>` : ""}
+    <h3 style="margin-top:6px">Importera</h3>
+    ${ui.pendingImport ? `
+      <div class="banner">Backupen har ${Object.keys(ui.pendingImport.words).length} ord${ui.pendingImport.exportedAt ? ", sparad " + esc(new Date(ui.pendingImport.exportedAt).toLocaleString("sv-SE", { dateStyle: "medium", timeStyle: "short" })) : ""}. Den <strong>ersätter</strong> allt du har nu (${Object.keys(words).length} ord).</div>
+      <div class="btns"><button class="btn small" data-act="cancelImport">Avbryt</button><button class="btn primary small" data-act="doImport">Ersätt</button></div>`
+    : `
+      <div class="field"><label for="importFile">Välj backupfil</label><input id="importFile" type="file" accept=".json,application/json,text/plain"></div>
+      <div class="field"><label for="importText">…eller klistra in texten</label><textarea id="importText" autocorrect="off" autocapitalize="off" spellcheck="false" style="font-family:var(--font-mono);font-size:12px"></textarea></div>
+      <button class="btn small" data-act="readImportText">Läs in text</button>
+      ${ui.importError ? `<p style="color:var(--again)">${esc(ui.importError)}</p>` : ""}`}
+  </div>
+  <div class="card">
+    <h3>Så fungerar det</h3>
+    <p class="muted small">Du plockar fram ordet ur minnet innan du ser eller hör facit, och facit kommer direkt efteråt. Uttal och stavning schemaläggs var för sig med FSRS, med målet att du minns 90 %. Ord du nästan glömt är bäst att repetera, därför kan intervallen kännas långa.</p>
+    <p class="muted small">${Store.mode === "db" ? "Dina ord sparas på ditt claude.ai-konto och följer med mellan iPhone och Chromebook." : IS_PWA ? "Dina ord sparas i telefonen. Gör en backup ibland." : "Dina ord sparas i den här webbläsaren."}</p>
+  </div>`;
+}
+
+/* ===== Händelser ===== */
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]");
+  if (!el || el.disabled) return;
+  const act = el.dataset.act, arg = el.dataset.arg;
+  const it = session && session.queue[0], w = it && words[it.wid];
+  switch (act) {
+    case "tab": Speech.stop(); session = null; setTab(arg); Updates.maybeApply(); break;
+    case "go": Speech.stop(); if (arg === "extra" || arg === "sentence") { session = null; } view = arg; ui = {}; render(); window.scrollTo(0, 0); break;
+    case "start": startSession(arg); break;
+    case "startNew": startSession("extraNew", ui.extraNew); break;
+    case "extraNew": ui.extraNew = Math.max(1, Math.min(10, ui.extraNew + +arg)); render(); break;
+    case "endSession": session.done = true; Speech.stop(); Rec.reset(); render(); break;
+    case "finish": session = null; view = "home"; ui = {}; render(); Updates.maybeApply(); break;
+    // Uttal
+    case "mic": if (Rec.recording) Rec.stop(); else Rec.start().then(render); render(); break;
+    case "reveal":
+      Rec.stop(); ui.answerSec = (Date.now() - ui.shownAt) / 1000; ui.phase = "answer"; render();
+      Speech.say(w.text).then(ok => { if (ok && Rec.url) wait(250).then(() => Rec.play()); });
+      break;
+    case "say": Speech.say(w ? w.text : ""); break;
+    case "saySlow": Speech.say(w.text, true); break;
+    case "playMe": Speech.stop(); Rec.play(); break;
+    case "compare": Speech.say(w.text).then(ok => { if (ok) wait(250).then(() => Rec.play()); }); break;
+    case "pronAgain": haptic("bad"); ui.phase = "again"; render(); Speech.say(w.text, true); break;
+    // Stavning
+    case "dictate": Speech.play(dictationSteps(w, false)); break;
+    case "dictateSlow": Speech.play(dictationSteps(w, true)); break;
+    case "retryShow": {
+      ui.phase = "retryShow"; render();
+      const key = ui.key; let n = 3;
+      const tick = () => {
+        if (ui.key !== key || ui.phase !== "retryShow") return;
+        n--; const c = document.getElementById("countdown");
+        if (n > 0) { if (c) c.textContent = `Döljs om ${n}…`; setTimeout(tick, 1000); }
+        else { ui.phase = "retryTyping"; ui.retry = ""; render(); }
+      };
+      setTimeout(tick, 1000);
+      break;
+    }
+    case "skipRetry": ui.retry = ""; ui.phase = "retryResult"; render(); break;
+    case "rate": if (it && it.skill === "pron" && ui.phase !== "again") haptic(+arg > 1 ? "ok" : "bad"); rate(+arg); break;
+    // Mening
+    case "sentNext": ui.i++; ui.sentence = ""; ui.check = null; render(); break;
+    // Ord
+    case "newWord": view = "edit"; ui = {}; render(); window.scrollTo(0, 0); break;
+    case "editWord": view = "edit"; ui = { id: arg }; render(); window.scrollTo(0, 0); break;
+    case "kind": syncForm(); ui.form.kind = arg; render(); break;
+    case "level": syncForm(); ui.form.level = arg; render(); break;
+    case "postpone": {
+      const pw = words[ui.id]; const now = Date.now();
+      pw.cards = { pron: newCard(now), spell: newCard(now) }; pw.created = now;
+      Store.saveWord(pw); toast(`”${pw.text}” kommer tillbaka senare`); view = "words"; ui = {}; render(); break;
+    }
+    case "sayField": { const t = document.getElementById("f-text").value.trim(); if (t) Speech.say(t); break; }
+    case "askDelete": syncForm(); ui.confirmDelete = true; render(); break;
+    case "cancelDelete": syncForm(); ui.confirmDelete = false; render(); break;
+    case "doDelete": Store.deleteWord(ui.id); toast("Ordet raderades"); view = "words"; ui = {}; render(); break;
+    // Statistik och inställningar
+    case "range": ui.range = +arg; render(); break;
+    case "accent": S().accent = arg; Store.saveProfile(); render(); Speech.say("Siobhan bought a receipt on Wednesday."); break;
+    case "testVoice": Speech.say("Siobhan bought a receipt on Wednesday."); break;
+    case "newPerDay": S().newPerDay = Math.max(1, Math.min(20, S().newPerDay + +arg)); Store.saveProfile(); render(); break;
+    case "minutes": S().minutes = +arg; Store.saveProfile(); render(); break;
+    case "checkUpdate":
+      ui.updMsg = "Söker…"; render();
+      Updates.check().then(r => {
+        ui.updMsg = r === "ny" ? "Ny version hittad. Appen laddas om…" : r === "senaste" ? "Du har senaste versionen." : r === "reload" ? "Laddar om…" : "Kunde inte söka just nu. Kontrollera att du har nät.";
+        if (view === "settings") render();
+      });
+      break;
+    case "exportBackup": exportBackup(); break;
+    case "copyBackup": copyBackup(); break;
+    case "readImportText": readBackup(document.getElementById("importText").value); break;
+    case "cancelImport": ui.pendingImport = null; render(); break;
+    case "doImport": importBackup(ui.pendingImport); ui.pendingImport = null; toast("Backupen är inläst"); render(); break;
+  }
+});
+function syncForm() {
+  if (!ui.form) return;
+  app.querySelectorAll("[data-f]").forEach(el => { ui.form[el.dataset.f] = el.value; });
+  const det = app.querySelector("details"); if (det) ui.more = det.open;
+}
+document.addEventListener("input", e => {
+  if (e.target.id === "ans") ui.typed = e.target.value;
+  else if (e.target.id === "ans2") ui.retry = e.target.value;
+  else if (e.target.id === "sent") ui.sentence = e.target.value;
+  else if (e.target.id === "search") {
+    ui.q = e.target.value;
+    const l = document.getElementById("wordlist"); if (l) l.innerHTML = wordListHtml();
+  }
+});
+document.addEventListener("change", e => {
+  if (e.target.id === "playSentence") { S().playSentence = e.target.checked; Store.saveProfile(); }
+  if (e.target.id === "importFile" && e.target.files && e.target.files[0]) {
+    const r = new FileReader();
+    r.onload = () => readBackup(r.result);
+    r.onerror = () => { ui.importError = "Kunde inte läsa filen."; render(); };
+    r.readAsText(e.target.files[0]);
+  }
+});
+document.addEventListener("submit", e => {
+  e.preventDefault();
+  const form = e.target.dataset.form;
+  const it = session && session.queue[0], w = it && words[it.wid];
+  if (form === "spell") {
+    const typed = document.getElementById("ans").value;
+    if (!typed.trim()) return;
+    Speech.stop();
+    ui.typed = typed;
+    const secs = (Date.now() - ui.shownAt) / 1000;
+    ui.suggested = suggestRating(w.text, typed, secs);
+    const ok = isCorrect(w.text, typed);
+    haptic(ok ? "ok" : "bad");
+    ui.phase = "result"; render();
+    if (!ok) Speech.say(w.text);
+  } else if (form === "retry") {
+    const typed = document.getElementById("ans2").value;
+    if (!typed.trim()) return;
+    ui.retry = typed; haptic(isCorrect(w.text, typed) ? "ok" : "bad");
+    ui.phase = "retryResult"; render();
+  } else if (form === "sentence") {
+    const sw = words[ui.list[ui.i]];
+    ui.sentence = document.getElementById("sent").value;
+    if (!ui.sentence.trim()) return;
+    ui.check = checkWordInSentence(sw.text, ui.sentence);
+    haptic(ui.check.correct ? "ok" : "bad");
+    if (!ui.check.correct && ui.check.closest) { registerMistakes(sw.text, ui.check.closest); Store.saveProfile(); }
+    render();
+  } else if (form === "word") {
+    syncForm();
+    const f = ui.form, text = f.text.trim();
+    if (!text) return;
+    if (wordExists(text, ui.id)) { ui.dup = true; haptic("bad"); render(); return; }
+    const level = f.level ? +f.level : estimateLevel(text, f.kind);
+    const fields = { level, text, kind: f.kind, guide: f.guide.trim(), syll: f.syll.trim(), trap: f.trap.trim(), mnemo: f.mnemo.trim(),
+      example: f.example.trim(), translation: f.translation.trim(), tags: f.tags.split(",").map(t => t.trim()).filter(Boolean) };
+    let target;
+    if (ui.id && words[ui.id]) { target = words[ui.id]; Object.assign(target, fields); }
+    else { target = makeWord(text, f.kind, fields); words[target.id] = target; }
+    Store.saveWord(target);
+    haptic("ok"); toast(ui.id ? "Sparat" : `”${text}” är tillagt`);
+    view = "words"; ui = {}; render();
+  } else if (form === "import") {
+    const raw = document.getElementById("imp").value, mode = document.getElementById("impkind").value;
+    const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    let added = 0, skipped = 0; const seen = new Set(); const base = Date.now();
+    lines.forEach((line, i) => {
+      if (seen.has(norm(line)) || wordExists(line)) { skipped++; return; }
+      seen.add(norm(line));
+      const kind = mode === "auto" ? (/^\p{Lu}/u.test(line) ? "name" : "word") : mode;
+      const bk = BANK_BY_TEXT.get(line.toLowerCase());
+      const nw = makeWord(line, kind, { created: base + i, level: bk ? bk[2] : estimateLevel(line, kind) });
+      words[nw.id] = nw; Store.saveWord(nw); added++;
+    });
+    ui.importResult = `${added} ord tillagda${skipped ? `, ${skipped} hoppades över` : ""}.`;
+    render();
+  }
+});
+
+/* ===== Start ===== */
+Updates.start();
+Store.init().then(() => {
+  const moved = migrate();
+  ready = true; render();
+  if (moved) toast(`${moved} svåra namn flyttades till senare. Du börjar med enklare ord.`);
+});
+</script>
